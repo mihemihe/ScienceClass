@@ -4,7 +4,6 @@ using UnityEngine;
 using KSP.UI.Screens;
 using System.IO;
 
-
 namespace ScienceClass
 {
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
@@ -34,9 +33,10 @@ namespace ScienceClass
         private void OnTechnologyResearched(GameEvents.HostTargetAction<RDTech, RDTech.OperationResult> data)
         {
             Debug.Log("[ScienceClass] OnTechnologyResearched triggered. Operation Result: " + data.target);
-
+            Debug.Log("[ScienceClass] Researched Node ID: " + data.host.techID);
             if (data.target == RDTech.OperationResult.Successful)
             {
+                Debug.Log("[ScienceClass] Researched Node ID: " + data.host.techID);
                 Debug.Log("[ScienceClass] Research completed: " + data.host.title);
                 popupText = $"Research completed: {data.host.title}";
                 showPopup = true;
@@ -66,11 +66,22 @@ namespace ScienceClass
                 GUILayout.Label("Image not loaded.");
             }
 
+            // Close button at the bottom
+            GUILayout.FlexibleSpace();
             if (GUILayout.Button("Close"))
             {
                 showPopup = false;
             }
             GUILayout.EndVertical();
+
+            // Classic close window button in the right top corner
+            float closeButtonSize = 20;
+            Rect closeButtonRect = new Rect(popupRect.width - closeButtonSize - 8, 8, closeButtonSize, closeButtonSize);
+            if (GUI.Button(closeButtonRect, "X"))
+            {
+                showPopup = false;
+            }
+
             GUI.DragWindow();
         }
 
@@ -99,7 +110,3 @@ namespace ScienceClass
         }
     }
 }
-
-
-
-
