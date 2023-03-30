@@ -2,17 +2,27 @@
 using System.Collections;
 using UnityEngine;
 using KSP.UI.Screens;
+using System.IO;
+
 
 namespace ScienceClass
 {
     [KSPAddon(KSPAddon.Startup.SpaceCentre, true)]
     public class ScienceClass : MonoBehaviour
     {
+        public Texture2D popupImage;
+        private Rect popupRect;
+        private bool showPopup = false;
+        private string popupText = "";
+
         private void Start()
         {
             DontDestroyOnLoad(this);
             GameEvents.OnTechnologyResearched.Add(OnTechnologyResearched);
             Debug.Log("[ScienceClass] Mod initialized and event listener added.");
+
+            popupImage = LoadImage("ScienceClass/science01.png");
+            popupRect = new Rect((Screen.width - 400) / 2, (Screen.height - 300) / 2, 400, 300);
         }
 
         private void OnDestroy()
@@ -27,17 +37,65 @@ namespace ScienceClass
 
             if (data.target == RDTech.OperationResult.Successful)
             {
-                Debug.Log("[ScienceClass] Research completed!!!!!!!!!!!!!!!!!!!: " + data.host.title);
-                StartCoroutine(ShowPopup(data.host.title));
+                Debug.Log("[ScienceClass] Research completed: " + data.host.title);
+                popupText = $"Research completed: {data.host.title}";
+                showPopup = true;
             }
         }
 
-        private IEnumerator ShowPopup(string researchName)
+        private void OnGUI()
         {
-            yield return new WaitForSeconds(1f);
+            if (showPopup)
+            {
+                popupRect = GUILayout.Window(0, popupRect, PopupWindow, "Research Completed");
+            }
+        }
 
-            var message = new ScreenMessage($"Research completed!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!: {researchName}", 5f, ScreenMessageStyle.UPPER_CENTER);
-            ScreenMessages.PostScreenMessage(message);
+        private void PopupWindow(int windowID)
+        {
+            GUILayout.BeginVertical();
+            GUILayout.Label(popupText);
+
+            if (popupImage != null)
+            {
+                Rect imageRect = new Rect(10, 50, popupRect.width - 20, popupRect.height - 90);
+                GUI.DrawTexture(imageRect, popupImage, ScaleMode.ScaleToFit);
+            }
+            else
+            {
+                GUILayout.Label("Image not loaded.");
+            }
+
+            if (GUILayout.Button("Close"))
+            {
+                showPopup = false;
+            }
+            GUILayout.EndVertical();
+            GUI.DragWindow();
+        }
+
+        private Texture2D LoadImage(string relativeFilePath)
+        {
+            string fullPath = Path.Combine(KSPUtil.ApplicationRootPath, "GameData", relativeFilePath);
+            Debug.Log("[ScienceClass] Full image path: " + fullPath);
+
+            if (System.IO.File.Exists(fullPath))
+            {
+                Debug.Log("[ScienceClass] Image file found: " + fullPath);
+                byte[] fileData = System.IO.File.ReadAllBytes(fullPath);
+                Texture2D texture = new Texture2D(2, 2);
+                if (ImageConversion.LoadImage(texture, fileData))
+                {
+                    Debug.Log("[ScienceClass] Image loaded successfully.");
+                    return texture;
+                }
+                else
+                {
+                    Debug.LogError("[ScienceClass] Image failed to load.");
+                }
+            }
+            Debug.LogError("[ScienceClass] Image file not found: " + fullPath);
+            return null;
         }
     }
 }
